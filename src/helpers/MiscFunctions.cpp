@@ -24,3 +24,12 @@ std::string execAndGet(const char* cmd) {
     }
     return result;
 }
+
+//wait for external renderer until !alive or 50ms elapsed
+void waitForExternalDeath(ExternalRendererInfo& info, uint8_t timeout) {
+   uint8_t cntr = 0;
+   while(info.com.status.load(std::memory_order_acquire) && cntr < timeout) {
+      cntr += 5;
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+   }
+}

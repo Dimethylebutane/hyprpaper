@@ -11,8 +11,8 @@ public:
 
     SMonitor* m_pMonitor = nullptr;
 
-    zwlr_layer_surface_v1* pLayerSurface = nullptr;
-    wl_surface* pSurface = nullptr;
+    zwlr_layer_surface_v1* pLayerSurface = nullptr; //used for env, ask for ack, background image
+    wl_surface* pSurface = nullptr; //used for rendering
 
     wl_cursor_theme* pCursorTheme = nullptr;
     wl_cursor_image* pCursorImg = nullptr;

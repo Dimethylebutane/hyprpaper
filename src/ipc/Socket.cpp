@@ -85,15 +85,15 @@ void CIPCSocket::initialize() {
 
 bool CIPCSocket::mainThreadParseRequest() {
 
-    if (!m_bRequestReady)
+    if (!m_bRequestReady) //if no request had been made
         return false;
 
     std::string copy = m_szRequest;
 
     // now we can work on the copy
 
-    if (copy == "")
-        return false;
+    if (copy.empty())
+      {return false;}
 
     Debug::log(LOG, "Received a request: %s", copy.c_str());
 

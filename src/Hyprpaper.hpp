@@ -3,6 +3,7 @@
 #include "defines.hpp"
 #include "config/ConfigManager.hpp"
 #include "render/WallpaperTarget.hpp"
+#include "render/External.hpp"
 #include "helpers/Monitor.hpp"
 #include "events/Events.hpp"
 #include "helpers/PoolBuffer.hpp"
@@ -19,7 +20,7 @@ public:
     // important
     wl_display* m_sDisplay; // assured
     wl_compositor* m_sCompositor; // assured
-    wl_shm* m_sSHM; // assured
+    wl_shm* m_sSHM; // assured  --  SHared Memory with compositor to pass data
     zwlr_layer_shell_v1* m_sLayerShell = nullptr; // expected
     wp_fractional_scale_manager_v1* m_sFractionalScale = nullptr; // will remain null if not bound
     wp_viewporter* m_sViewporter = nullptr; // expected
@@ -33,6 +34,7 @@ public:
     std::unordered_map<std::string, std::string> m_mMonitorActiveWallpapers;
     std::unordered_map<std::string, SWallpaperRenderData> m_mMonitorWallpaperRenderData;
     std::unordered_map<SMonitor*, CWallpaperTarget*> m_mMonitorActiveWallpaperTargets;
+    std::unordered_map<std::string, ExternalRendererInfo> m_mMonitorExposed; //hold names of exposed monitors and link to external renderer
     std::vector<std::unique_ptr<SPoolBuffer>> m_vBuffers;
     std::vector<std::unique_ptr<SMonitor>> m_vMonitors;
 
@@ -50,6 +52,9 @@ public:
     void        renderWallpaperForMonitor(SMonitor*);
     void        createBuffer(SPoolBuffer*, int32_t, int32_t, uint32_t);
     void        destroyBuffer(SPoolBuffer*);
+    void        launchExternalRenderer(SMonitor*, ExternalRendererInfo*);
+    static void sendDataToExternalRenderer(ExternalRendererCom::UpdtData, ExternalRendererCom::Event, ExternalRendererInfo*);
+    void terminateExternalRenderer(ExternalRendererInfo&,SMonitor*, bool noDlClose = false);
     int         createPoolFile(size_t, std::string&);
     bool        setCloexec(const int&);
     void        clearWallpaperFromMonitor(const std::string&);

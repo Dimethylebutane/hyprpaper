@@ -1,5 +1,6 @@
 #include "ConfigManager.hpp"
 #include "../Hyprpaper.hpp"
+#include <dlfcn.h>
 
 CConfigManager::CConfigManager() {
     // Initialize the configuration
@@ -77,10 +78,10 @@ std::string CConfigManager::removeBeginEndSpacesTabs(std::string str) {
 void CConfigManager::parseLine(std::string& line) {
     // first check if its not a comment
     const auto COMMENTSTART = line.find_first_of('#');
-    if (COMMENTSTART == 0)
+    if (COMMENTSTART == 0) //if comment start on first char then only comment ignore line
         return;
 
-    // now, cut the comment off
+    // now, cut the comment off (npos meas no position found for #
     if (COMMENTSTART != std::string::npos)
         line = line.substr(0, COMMENTSTART);
 
@@ -93,7 +94,7 @@ void CConfigManager::parseLine(std::string& line) {
     // check if command
     const auto EQUALSPLACE = line.find_first_of('=');
 
-    if (EQUALSPLACE == std::string::npos)
+    if (EQUALSPLACE == std::string::npos) //all usefull lines have a "=" sign, return if not found
         return;
 
     const auto COMMAND = removeBeginEndSpacesTabs(line.substr(0, EQUALSPLACE));
@@ -123,6 +124,54 @@ void CConfigManager::parseKeyword(const std::string& COMMAND, const std::string&
         parseError = "unknown keyword " + COMMAND;
 }
 
+void CConfigManager::handleExternSurface(const std::string& monitor, const std::string& pathToSO) {
+
+   Debug::log( LOG, "handleExposeSurface %s <---------", pathToSO.c_str());
+
+   g_pHyprpaper->clearWallpaperFromMonitor(monitor);//clear wallpaper
+   //if already exposed warn
+   void* duplicateSO = nullptr;
+   ExternalRendererThrd_pfun pfun = nullptr;
+   for( auto& [str, ERinfo] : g_pHyprpaper->m_mMonitorExposed) {
+      if (str.compare(monitor) == 0) {
+         Debug::log(WARN, "%s monitor already exposed, ignoring", monitor.c_str());
+         return;
+      }
+      if (ERinfo.path.compare(pathToSO) == 0) {
+         duplicateSO = ERinfo.SOhandle;
+         pfun = ERinfo.renderer;
+      }
+   }
+
+   // load .so only once
+   void* handle = duplicateSO;
+   if (handle == nullptr) {
+      handle = dlopen(pathToSO.c_str(), RTLD_NOW);
+      if (!handle) {
+         Debug::log( ERR, "error loading SO: %s", dlerror() );
+         exit(1); //TODO handle error
+      }
+      dlerror();    /* Clear any existing error */
+
+      pfun = *(ExternalRendererThrd_pfun*)dlsym(handle, "renderer");
+      if (pfun == nullptr) {
+         Debug::log(ERR, "Cannot load so : %s", dlerror());
+         exit(1);
+      }
+      dlerror();    /* Clear any existing error */
+   }
+
+   // link btwn here and monitor creation to set exposed -> Hyprpaper stdvector with name of exposed monitor + recheck monitor (ensureHasActiveWP
+   // does this work with only map[monitor].att = val ?
+   //g_pHyprpaper->m_mMonitorExposed.emplace(std::piecewise_construct, monitor, {});
+   // com is created to its default so it's ok
+   g_pHyprpaper->m_mMonitorExposed[monitor].renderer = pfun;
+   g_pHyprpaper->m_mMonitorExposed[monitor].path = pathToSO;
+   g_pHyprpaper->m_mMonitorExposed[monitor].SOhandle = handle;
+   Debug::log( LOG, "End of CConfig handle Extern");
+
+}
+
 void CConfigManager::handleWallpaper(const std::string& COMMAND, const std::string& VALUE) {
     if (VALUE.find_first_of(',') == std::string::npos) {
         parseError = "wallpaper failed (syntax)";
@@ -131,6 +180,13 @@ void CConfigManager::handleWallpaper(const std::string& COMMAND, const std::stri
 
     auto MONITOR = VALUE.substr(0, VALUE.find_first_of(','));
     auto WALLPAPER = trimPath(VALUE.substr(VALUE.find_first_of(',') + 1));
+
+    //if we want to expose the wl surface and display
+    if (WALLPAPER.find("extern:") == 0) { //start with extern:
+       WALLPAPER = WALLPAPER.substr(7); //path to .so
+       handleExternSurface(MONITOR, WALLPAPER);
+       return;
+    }
 
     bool contain = false;
 

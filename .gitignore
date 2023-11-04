@@ -18,6 +18,7 @@ result
 *-protocol.c
 *-protocol.h
 .ccls-cache
+.tasks
 
 hyprctl/hyprctl
 

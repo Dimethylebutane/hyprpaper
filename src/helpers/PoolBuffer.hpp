@@ -12,6 +12,6 @@ struct SPoolBuffer {
     size_t size = 0;
     std::string name = "";
 
-    std::string target = "";
+    std::string target = ""; //path of picture 
     Vector2D pixelSize;
 };

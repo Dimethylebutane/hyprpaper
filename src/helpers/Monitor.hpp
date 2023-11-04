@@ -21,6 +21,7 @@ struct SMonitor {
     bool wantsReload = false;
     bool wantsACK = false;
     bool initialized = false;
+    bool exposed = false;
 
     std::vector<std::unique_ptr<CLayerSurface>> layerSurfaces;
     CLayerSurface* pCurrentLayerSurface = nullptr;

@@ -29,9 +29,11 @@ CLayerSurface::CLayerSurface(SMonitor* pMonitor) {
         exit(1);
     }
 
+    //ask compositior for the size
     zwlr_layer_surface_v1_set_size(pLayerSurface, 0, 0);
+    //ask to be anchor to all side = full screen
     zwlr_layer_surface_v1_set_anchor(pLayerSurface, ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT | ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM | ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT);
-    zwlr_layer_surface_v1_set_exclusive_zone(pLayerSurface, -1);
+    zwlr_layer_surface_v1_set_exclusive_zone(pLayerSurface, -1);//everything render above
     zwlr_layer_surface_v1_add_listener(pLayerSurface, &Events::layersurfaceListener, this);
     wl_surface_commit(pSurface);
 

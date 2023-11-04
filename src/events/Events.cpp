@@ -1,4 +1,5 @@
 #include "Events.hpp"
+#include <chrono>
 #include "../Hyprpaper.hpp"
 
 void Events::geometry(void *data, wl_output *output, int32_t x, int32_t y, int32_t width_mm, int32_t height_mm, int32_t subpixel, const char *make, const char *model, int32_t transform) {
@@ -82,7 +83,7 @@ void Events::handlePointerEnter(void *data, struct wl_pointer *wl_pointer, uint3
 void Events::ls_configure(void *data, zwlr_layer_surface_v1 *surface, uint32_t serial, uint32_t width, uint32_t height) {
     const auto PLAYERSURFACE = (CLayerSurface*)data;
 
-    PLAYERSURFACE->m_pMonitor->size = Vector2D(width, height);
+    PLAYERSURFACE->m_pMonitor->size = Vector2D(width, height); //why double ?
     PLAYERSURFACE->m_pMonitor->wantsReload = true;
     PLAYERSURFACE->m_pMonitor->configureSerial = serial;
     PLAYERSURFACE->m_pMonitor->wantsACK = true;
@@ -95,15 +96,40 @@ void Events::handleLSClosed(void *data, zwlr_layer_surface_v1 *zwlr_layer_surfac
     const auto PLAYERSURFACE = (CLayerSurface*)data;
 
     for (auto& m : g_pHyprpaper->m_vMonitors) {
-        std::erase_if(m->layerSurfaces, [&](const auto& other) { return other.get() == PLAYERSURFACE; });
-        if (m->pCurrentLayerSurface == PLAYERSURFACE) {
-            if (m->layerSurfaces.empty()) {
-                m->pCurrentLayerSurface = nullptr;
+
+       auto predicat = [PLAYERSURFACE](std::unique_ptr<CLayerSurface>& ptr) { 
+          return ptr.get() == PLAYERSURFACE;
+       };
+       auto itb = std::find_if(m->layerSurfaces.begin(), m->layerSurfaces.end(), predicat);
+       while (itb != m->layerSurfaces.end())
+       {
+         if (m->pCurrentLayerSurface != PLAYERSURFACE) { //just delete surface, no one is using it
+                m->layerSurfaces.erase(itb);
+         } else { //be carefull if external to terminate thread before
+            if (m->layerSurfaces.size() == 1) { //only one = the one we will delete
+               m->pCurrentLayerSurface = nullptr;
+               if(m->exposed) { //tell external renderer to exit and wait
+                  g_pHyprpaper->terminateExternalRenderer(g_pHyprpaper->m_mMonitorExposed[m->name], m.get());
+               }
+               m->layerSurfaces.erase(itb);
             } else {
+                m->layerSurfaces.erase(itb);
                 m->pCurrentLayerSurface = m->layerSurfaces.begin()->get();
-                g_pHyprpaper->recheckMonitor(m.get());
+                g_pHyprpaper->recheckMonitor(m.get()); //will handle com to external renderer
             }
-        }
+         }          
+         itb = std::find_if(m->layerSurfaces.begin(), m->layerSurfaces.end(), predicat);
+       }
+
+        //std::erase_if(m->layerSurfaces, [&](const auto& other) { return other.get() == PLAYERSURFACE; });
+        //if (m->pCurrentLayerSurface == PLAYERSURFACE) {
+            //if (m->layerSurfaces.empty()) {
+                //m->pCurrentLayerSurface = nullptr;
+            //} else {
+                //m->pCurrentLayerSurface = m->layerSurfaces.begin()->get();
+                //g_pHyprpaper->recheckMonitor(m.get());
+            //}
+        //}
     }
 }
 

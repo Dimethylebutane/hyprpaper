@@ -1,5 +1,6 @@
 #pragma once
 #include "../defines.hpp"
+#include "../render/External.hpp"
 
 class CIPCSocket;
 
@@ -22,6 +23,7 @@ private:
     void handlePreload(const std::string&, const std::string&);
     void handleUnload(const std::string&, const std::string&);
     void handleUnloadAll(const std::string&, const std::string&);
+    void handleExternSurface(const std::string& monitor, const std::string& wallpaper);
     std::string trimPath(std::string path);
 
     friend class CIPCSocket;
