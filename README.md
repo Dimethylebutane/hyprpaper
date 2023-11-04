@@ -1,3 +1,7 @@
+Fork to add animated wall paper
+see render/External.hpp for infos (TODO: doc here in redme.md)
+proof of concept using : https://github.com/Dimethylebutane/itsnotwallpaperengine for the shared object
+
 # hyprpaper
 
 Hyprpaper is a blazing fast wallpaper utility for Hyprland with the ability to dynamically change wallpapers through sockets. It will work on all wlroots-based compositors, though.
