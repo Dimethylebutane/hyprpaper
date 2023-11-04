@@ -2,6 +2,8 @@ Fork to add animated wall paper
 see render/External.hpp for infos (TODO: doc here in redme.md)
 proof of concept using : https://github.com/Dimethylebutane/itsnotwallpaperengine for the shared object
 
+This project as a big issue: vulkan frame presentation trigger wl\_display\_dispatch and Hyprpaper tick function is called each frame :/
+
 # hyprpaper
 
 Hyprpaper is a blazing fast wallpaper utility for Hyprland with the ability to dynamically change wallpapers through sockets. It will work on all wlroots-based compositors, though.

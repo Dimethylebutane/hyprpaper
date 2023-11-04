@@ -126,7 +126,7 @@ void CConfigManager::parseKeyword(const std::string& COMMAND, const std::string&
 
 void CConfigManager::handleExternSurface(const std::string& monitor, const std::string& pathToSO) {
 
-   Debug::log( LOG, "handleExposeSurface %s <---------", pathToSO.c_str());
+   Debug::log( LOG, "handleExposeSurface %s - %s <---------", pathToSO.c_str(), monitor.c_str());
 
    g_pHyprpaper->clearWallpaperFromMonitor(monitor);//clear wallpaper
    //if already exposed warn
