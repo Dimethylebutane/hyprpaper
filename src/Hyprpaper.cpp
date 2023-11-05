@@ -430,8 +430,12 @@ void CHyprpaper::createLSForMonitor(SMonitor* pMonitor) {
     pMonitor->pCurrentLayerSurface = pMonitor->layerSurfaces.emplace_back(std::make_unique<CLayerSurface>(pMonitor)).get();
 }
 
-void CHyprpaper::sendDataToExternalRenderer(ExternalRendererCom::UpdtData data, ExternalRendererCom::Event evnt, ExternalRendererInfo* extrnl)
+void CHyprpaper::sendDataToExternalRenderer(ExternalRendererCom::UpdtData data, ExternalRendererCom::Event evnt, ExternalRendererInfo* extrnl, bool unCheck)
 {
+   // while needTocheck && alive && previous info not read
+   while(unCheck && (extrnl->com.event.load(std::memory_order_acquire) != ExternalRendererCom::Event::none) && extrnl->com.status.load(std::memory_order_acquire)) {
+      std::this_thread::sleep_for(std::chrono::milliseconds( 10 ));
+   }
    extrnl->com.updtData = data; //using fence for memory sync ordering
    std::atomic_thread_fence(std::memory_order_release); //ensure previous data is transmitted
    extrnl->com.event.store(evnt, std::memory_order_release); //ping extrnl renderer
@@ -444,9 +448,7 @@ void CHyprpaper::launchExternalRenderer(SMonitor* pMon, ExternalRendererInfo* ex
    extRendrr->com.status.store( true ); //set alive flag only place in Hyprpaper where status get written to
    extRendrr->launched = true;
 
-   wl_surface* surface = pMon->pCurrentLayerSurface->pSurface;
-   std::cout << reinterpret_cast<uint64_t>(surface) << " " << pMon->size.x << "\n";
-   std::cout << ((surface == nullptr) ? "Surface is null from hpr\n" : "surface is ok from hypr\n");
+   //wl_surface* surface = pMon->pCurrentLayerSurface->pSurface;
 
    ExternalRendererCom::UpdtData updt {
                .width = static_cast<uint32_t>(pMon->size.x),
@@ -457,7 +459,7 @@ void CHyprpaper::launchExternalRenderer(SMonitor* pMon, ExternalRendererInfo* ex
 
    Debug::log(LOG, "path: %s   --   mon: %s", extRendrr->path.c_str(), pMon->name.c_str());
 
-   sendDataToExternalRenderer(updt, ExternalRendererCom::Event::update, extRendrr); //send data to thread
+   sendDataToExternalRenderer(updt, ExternalRendererCom::Event::update, extRendrr, true); //send data to thread
 
    //spawn Rdrr thread, this thread may or may not normaly terminate for optimisation purpose, state of renderer is given by its status
    extRendrr->Rdrrthread = std::thread(

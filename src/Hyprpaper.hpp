@@ -53,7 +53,7 @@ public:
     void        createBuffer(SPoolBuffer*, int32_t, int32_t, uint32_t);
     void        destroyBuffer(SPoolBuffer*);
     void        launchExternalRenderer(SMonitor*, ExternalRendererInfo*);
-    static void sendDataToExternalRenderer(ExternalRendererCom::UpdtData, ExternalRendererCom::Event, ExternalRendererInfo*);
+    static void sendDataToExternalRenderer(ExternalRendererCom::UpdtData, ExternalRendererCom::Event, ExternalRendererInfo*, bool uncheck = false);
     void terminateExternalRenderer(ExternalRendererInfo&,SMonitor*, bool noDlClose = false);
     int         createPoolFile(size_t, std::string&);
     bool        setCloexec(const int&);
